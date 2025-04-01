@@ -100,30 +100,30 @@ export async function GET(request) {
             where: whereClause,
             include: {
                 roomTypes: {
-                where: {
-                    AND: [
-                    {
-                        pricePerNight: {
-                        gte: priceRange ? parseFloat(priceRange[0]) : undefined,
-                        lte: priceRange ? parseFloat(priceRange[1]) : undefined,
-
-                        },
+                    where: {
+                        AND: [
+                            {
+                                pricePerNight: {
+                                    gte: priceRange ? parseFloat(priceRange[0]) : undefined,
+                                    lte: priceRange ? parseFloat(priceRange[1]) : undefined,
+                                },
+                            },
+                            {
+                                hotelBookings: {
+                                    none: {
+                                        AND: [
+                                            { checkIn: { lt: endDate } }, // Booking starts before the end date
+                                            { checkOut: { gt: startDate } }, // Booking ends after the start date
+                                        ],
+                                    },
+                                },
+                            },
+                        ],
                     },
-                    {
-                        hotelBookings: {
-                        none: {
-                            AND: [
-                            { checkIn: { lt: endDate } }, // Booking starts before the end date
-                            { checkOut: { gt: startDate } }, // Booking ends after the start date
-                            ],
-                        },
-                        },
-                    },
-                    ],
-                },
                 },
             },
         });
+        
 
         const availableHotels = result.filter((hotel) => hotel.roomTypes.length > 0);
 
