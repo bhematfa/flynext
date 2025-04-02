@@ -1,6 +1,6 @@
 import  prisma  from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { parseAndVerifyToken } from "../../../utils/jwt.js";
+import { parseAndVerifyToken } from "../../../../utils/jwt.js";
 
 //As a user, I want to add my hotel to the platform. A hotel has name, logo, address, location, star-rating, and several images.
 export async function POST(request) {
@@ -100,30 +100,30 @@ export async function GET(request) {
             where: whereClause,
             include: {
                 roomTypes: {
-                    where: {
-                        AND: [
-                            {
-                                pricePerNight: {
-                                    gte: priceRange ? parseFloat(priceRange[0]) : undefined,
-                                    lte: priceRange ? parseFloat(priceRange[1]) : undefined,
-                                },
-                            },
-                            {
-                                hotelBookings: {
-                                    none: {
-                                        AND: [
-                                            { checkIn: { lt: endDate } }, // Booking starts before the end date
-                                            { checkOut: { gt: startDate } }, // Booking ends after the start date
-                                        ],
-                                    },
-                                },
-                            },
-                        ],
+                where: {
+                    AND: [
+                    {
+                        pricePerNight: {
+                        gte: priceRange ? parseFloat(priceRange[0]) : undefined,
+                        lte: priceRange ? parseFloat(priceRange[1]) : undefined,
+
+                        },
                     },
+                    {
+                        hotelBookings: {
+                        none: {
+                            AND: [
+                            { checkIn: { lt: endDate } }, // Booking starts before the end date
+                            { checkOut: { gt: startDate } }, // Booking ends after the start date
+                            ],
+                        },
+                        },
+                    },
+                    ],
+                },
                 },
             },
         });
-        
 
         const availableHotels = result.filter((hotel) => hotel.roomTypes.length > 0);
 

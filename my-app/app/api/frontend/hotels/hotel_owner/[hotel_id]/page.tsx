@@ -3,6 +3,11 @@ import React, { useEffect, useState } from "react";
 import prisma from "@/lib/prisma";
 import { Hotel, RoomType } from "@prisma/client";
 import Link from 'next/link';
+import { findAvailability } from "../../../../../../utils/availablehelp.js";
+
+
+// add roomtype
+// update number of availrooms per room type
 
 const ManageRoomTypes = ({ hotelId }: { hotelId: string }) => {
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
@@ -78,17 +83,17 @@ const ManageRoomTypes = ({ hotelId }: { hotelId: string }) => {
     }
   };
 
-  const handleUpdateAvailableRooms = async (roomId: string, newAvailableRooms: number) => {
+  const handleUpdateAvailableRooms = async (roomId: string, newAvailableRooms: number, startDate: string, endDate: string) => {
     setError("");
     setSuccessMessage("");
 
     try {
-      const response = await fetch(`/api/hotels/${roomId}`, {
+      const response = await fetch(`/api/hotels/rooms/${roomId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ availableRooms: newAvailableRooms }),
+        body: JSON.stringify({ availableRooms: newAvailableRooms, startDate, endDate }),
       });
 
       const data = await response.json();
@@ -168,20 +173,63 @@ const ManageRoomTypes = ({ hotelId }: { hotelId: string }) => {
 
       {/* Scrollable List of Room Types */}
       <div className="space-y-6 overflow-y-auto max-h-96 border rounded p-4">
-        {roomTypes.map((room) => (
-          <div key={room.id} className="border rounded p-4 mb-4">
-            <h2 className="text-xl font-semibold">{room.name}</h2>
-            <p>Amenities: {Array.isArray(room.amenities) ? room.amenities.join(", ") : "None"}</p>
-            <p>Price Per Night: ${room.pricePerNight.toString()}</p>
-            <p>Available Rooms: {room.availableRooms}</p>
-            <input
-              type="number"
-              placeholder="Edit Available Rooms"
-              className="input"
-              onChange={(e) => handleUpdateAvailableRooms(room.id, parseInt(e.target.value))}
-            />
-          </div>
-        ))}
+        {roomTypes.map((room) => {
+          const [startDate, setStartDate] = useState("");
+          const [endDate, setEndDate] = useState("");
+          const [availableRooms, setAvailableRooms] = useState("");
+          const [isValid, setIsValid] = useState(false);
+
+          useEffect(() => {
+            // Check if all fields are filled
+            if (startDate && endDate && availableRooms) {
+              setIsValid(true);
+            } else {
+              setIsValid(false);
+            }
+          }, [startDate, endDate, availableRooms]);
+
+          return (
+            <div key={room.id} className="border rounded p-4 mb-4">
+              <h2 className="text-xl font-semibold">{room.name}</h2>
+              <p>Amenities: {Array.isArray(room.amenities) ? room.amenities.join(", ") : "None"}</p>
+              <p>Price Per Night: ${room.pricePerNight.toString()}</p>
+
+              {/* Inputs for Updating Availability */}
+              <div className="space-y-2">
+                <input
+                  type="date"
+                  placeholder="Start Date"
+                  className="input"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+                <input
+                  type="date"
+                  placeholder="End Date"
+                  className="input"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+                <input
+                  type="number"
+                  placeholder="Available Rooms"
+                  className="input"
+                  value={availableRooms}
+                  onChange={(e) => setAvailableRooms(e.target.value)}
+                />
+                <button
+                  disabled={!isValid} // Disable button if validation fails
+                  onClick={() =>
+                    handleUpdateAvailableRooms(room.id, parseInt(availableRooms), startDate, endDate)
+                  }
+                  className={`btn ${isValid ? "bg-green-500 text-white" : "bg-gray-500 text-gray-300 cursor-not-allowed"}`}
+                >
+                  Update Availability
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -189,4 +237,5 @@ const ManageRoomTypes = ({ hotelId }: { hotelId: string }) => {
 
 export default ManageRoomTypes;
 
-  
+
+

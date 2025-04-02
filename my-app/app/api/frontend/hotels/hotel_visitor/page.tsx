@@ -1,22 +1,11 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { Hotel, RoomType } from "@prisma/client";
+import { findAvailability } from "../../../../../utils/availablehelp.js";
 
 // Type for Hotel with RoomType relation
-type HotelWithRooms = {
-  id: string;
-  name: string;
-  logo?: string;
-  address: string;
-  city: string;
-  location: string;
-  starRating: number;
-  roomTypes: {
-    id: string;
-    name: string;
-    pricePerNight: number;
-  }[];
-};
+type HotelWithRooms = Hotel & { roomTypes: RoomType[] };
 
 const HotelSearch = () => {
   const [searchParams, setSearchParams] = useState({
@@ -32,10 +21,12 @@ const HotelSearch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchParams({ ...searchParams, [e.target.name]: e.target.value });
   };
 
+  // Function to filter hotels based on availability
   const fetchHotels = async () => {
     setLoading(true);
     setError("");
@@ -46,7 +37,17 @@ const HotelSearch = () => {
       if (data.error) {
         setError(data.error);
       } else {
-        setHotels(data.availableHotels);
+
+        // Filter hotels by room availability
+        const filteredHotels = await Promise.all(
+          data.availableHotels.map(async (hotel: HotelWithRooms) => {
+            const isAvailable = await checkRoomAvailability(hotel.roomTypes);
+            return isAvailable ? hotel : null;
+          })
+        );
+
+        // Only include hotels with available rooms
+        setHotels(filteredHotels.filter((hotel) => hotel !== null));
       }
     } catch (err) {
       console.error("Error fetching hotels:", err);
@@ -56,9 +57,19 @@ const HotelSearch = () => {
     }
   };
 
+  // Check if any room in a hotel is available for the date range
+  const checkRoomAvailability = async (roomTypes: RoomType[]) => {
+    for (const roomType of roomTypes) {
+      const availRooms = findAvailability(roomType.schedule, searchParams.checkIn, searchParams.checkOut);
+      if (availRooms > 0) {
+        return true; // Room type is available
+      }
+    }
+    return false; // No room types are available
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-10">
         <h2 className="text-3xl font-bold mb-4 text-center">Search for Hotels</h2>
@@ -123,10 +134,9 @@ const HotelSearch = () => {
                 <div className="bg-gray-800 p-6 rounded-lg shadow hover:bg-gray-700 transition duration-200">
                   <h3 className="text-xl font-bold">{hotel.name}</h3>
                   <p>City: {hotel.city}</p>
-                  <p>
-                    Starting Price: $
+                  <p>Starting Price: $
                     {hotel.roomTypes.length > 0
-                      ? hotel.roomTypes.reduce((min, roomType) => Math.min(min, roomType.pricePerNight), Infinity)
+                      ? hotel.roomTypes.reduce((min, roomType) => Math.min(min, roomType.pricePerNight.toNumber()), Infinity)
                       : "Not Available"}
                   </p>
                   <p>Star Rating: {hotel.starRating}</p>
@@ -135,7 +145,7 @@ const HotelSearch = () => {
               </Link>
             ))
           ) : (
-            <p className="text-gray-400">No hotels found.</p>
+            <p className="text-gray-400">No hotels found with available rooms in the selected range.</p>
           )}
         </div>
       </main>
