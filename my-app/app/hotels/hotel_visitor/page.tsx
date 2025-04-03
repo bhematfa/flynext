@@ -2,9 +2,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Hotel, RoomType } from "@prisma/client";
-import { findAvailability } from "../../../../../utils/availablehelp.js";
+import { findAvailability } from "../../../utils/availablehelp.js";
 
-// Type for Hotel with RoomType relation
+// View list of hotels
+
 type HotelWithRooms = Hotel & { roomTypes: RoomType[] };
 
 const HotelSearch = () => {

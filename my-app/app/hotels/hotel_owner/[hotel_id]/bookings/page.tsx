@@ -4,6 +4,9 @@ import prisma from "@/lib/prisma";
 import { Hotel, RoomType } from "@prisma/client";
 import Link from 'next/link';
 
+// view list of bookings
+// cancel bookings
+
 const BookingList = ({ hotelId }: { hotelId: string }) => {
   const [bookings, setBookings] = useState([]);
   const [date, setDate] = useState("");

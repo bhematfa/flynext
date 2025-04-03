@@ -50,7 +50,7 @@ export async function POST(request) {
       role: user.role,
     });
 
-    return NextResponse.json({ token }, { status: 200 });
+    return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

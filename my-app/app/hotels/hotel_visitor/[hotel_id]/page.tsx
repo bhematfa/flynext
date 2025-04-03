@@ -4,6 +4,9 @@ import prisma from "@/lib/prisma";
 import { Hotel, RoomType } from "@prisma/client";
 import { useRouter } from 'next/router';
 
+// view hotel details
+// see if a room is available from a certain date to a certain date
+
 type HotelWithRooms = Hotel & { roomTypes: RoomType[] };
 
 const HotelDetails = () => {
@@ -21,7 +24,7 @@ const HotelDetails = () => {
     if (!id) return;
     const fetchHotel = async () => {
       try {
-        const response = await fetch(`/api/backend/hotels/${id}`);
+        const response = await fetch(`/api/hotels/${id}`);
         const data = await response.json();
         if (data.error) {
           setError(data.error);
@@ -46,8 +49,8 @@ const HotelDetails = () => {
     }
 
     try {
-      const response = await fetch(`/api/backend/rooms/${selectedRoom.id}`, {
-        method: "POST",
+      const response = await fetch(`/api/rooms/${selectedRoom.id}`, {
+        method: "GET",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ checkIn, checkOut }),
       });

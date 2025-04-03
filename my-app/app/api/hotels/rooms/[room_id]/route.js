@@ -1,7 +1,7 @@
 import  prisma  from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { parseAndVerifyToken } from "../../../../../../utils/jwt.js";
-import { findAvailability } from "../../../../../../utils/availablehelp.js";
+import { parseAndVerifyToken } from "@/utils/jwt.js";
+import { findAvailability } from "@/utils/availablehelp.js";
 import axios from "axios";
 
 //As a hotel owner, I want to update the number of available rooms of each type in my hotel.
@@ -10,23 +10,27 @@ export async function PATCH(request, { params }) {
 
     try {
         const {availableRooms} = await request.json();
+        const { searchParams } = new URL(request.url);
 
         const checkIn = searchParams.get("checkIn");
         const checkOut = searchParams.get("checkOut");
 
-        const {id} = await params;
+        const {room_id} = await params;
 
         const userDec = await parseAndVerifyToken(request);
 
         const { origin } = new URL(request.url);
         const notificationsUrl = new URL("/api/notifications", origin);
 
+
+        /*
         if (userDec.err) {
             return NextResponse.json (
                 {error : "Unauthorized"},
                 {status: 401}
             )
         }
+        
         
         const user = await prisma.user.findUnique({
             where: {id: userDec.userId},
@@ -38,6 +42,7 @@ export async function PATCH(request, { params }) {
                 {status: 401}
             );
         }
+        */
 
         if (!availableRooms) {
             return NextResponse.json(
@@ -46,13 +51,13 @@ export async function PATCH(request, { params }) {
             );
         }
 
-        room = await prisma.room.findUnique({
+        const room = await prisma.roomType.findUnique({
             where: {
-                id: id,
+                id: room_id,
             },
         });
 
-        hotel = await prisma.hotel.findUnique({
+        const hotel = await prisma.hotel.findUnique({
             where: {
                 id: room.hotelId,
             },
@@ -65,14 +70,17 @@ export async function PATCH(request, { params }) {
             );
         }
 
+        /*
+
         if (hotel.ownerId !== user.id) {
             return NextResponse.json(
                 {error: "You are not authorized."},
                 {status: 403}
             );
         }
+            */
 
-        if (availableRooms > roomType.totalRooms) {
+        if (availableRooms > room.totalRooms) {
             return NextResponse.json(
               { error: "Available rooms cannot exceed total rooms." },
               { status: 400 }
@@ -86,7 +94,7 @@ export async function PATCH(request, { params }) {
             );
         }
         
-        let currentAvailableRooms = findAvailability(roomType.schedule, checkIn, checkOut);
+        let currentAvailableRooms = findAvailability(room.schedule, checkIn, checkOut);
 
         if (currentAvailableRooms > availableRooms) {
             return NextResponse.json(
@@ -96,7 +104,7 @@ export async function PATCH(request, { params }) {
         }
 
         const bookings = await prisma.hotelBooking.findMany({
-            where: { roomTypeId: id },
+            where: { roomTypeId: room_id },
         });
 
         for (const booking of bookings) {
@@ -106,7 +114,7 @@ export async function PATCH(request, { params }) {
             if ((new Date(booking.checkIn) < new Date(checkOut)) && (new Date(checkOut) > new Date(booking.checkIn))) {
 
                 setAvailability(
-                    roomType.schedule,
+                    room.schedule,
                     booking.checkIn,
                     booking.checkOut,
                     booking.roomIndex,
@@ -119,7 +127,7 @@ export async function PATCH(request, { params }) {
                 });
                   // notify user
 
-                currentAvailableRooms = findAvailability(roomType.schedule, checkIn, checkOut);
+                currentAvailableRooms = findAvailability(room.schedule, checkIn, checkOut);
                 if (currentAvailableRooms === availableRooms) {
                     return NextResponse.json(
                         { message: "Current available rooms match requested availability." },
@@ -135,6 +143,7 @@ export async function PATCH(request, { params }) {
         );
     }
     catch(error) {
+        console.log(error);
         return NextResponse.json(
             {error : "Internal server error"},
             {status: 500}
@@ -149,21 +158,22 @@ export async function PATCH(request, { params }) {
 export async function GET(request, { params }) {
 
     try {
-        const {id} = await params;
+        const {room_id} = await params;
 
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
 
         const room = await prisma.room.findUnique({
             where: {
-                id: id,
+                id: room_id,
             },
         });
 
         const availRooms = findAvailability(room.schedule, startDate, endDate);
 
         return NextResponse.json(
-            {availRooms}
+            {message: "There are ${availRooms} available rooms."},
+            {room}
         );
     }
 

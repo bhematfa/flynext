@@ -3,7 +3,6 @@ import React, { useState } from "react";
 
 // create hotel
 
-
 const CreateHotel = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -15,7 +14,6 @@ const CreateHotel = () => {
   });
 
   const [images, setImages] = useState<File[]>([]); // Store uploaded image files
-  const [logos, setLogo] = useState<File | null>(null); // Store the logo file separately
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -29,25 +27,40 @@ const CreateHotel = () => {
     }
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string); // Base64 string
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSuccessMessage("");
 
-    const formDataToSubmit = new FormData(); // Use FormData to handle file uploads
-    formDataToSubmit.append("name", formData.name);
-    images.forEach((image, index) => formDataToSubmit.append(`images`, image)); // Append each image file
-    formDataToSubmit.append("address", formData.address);
-    formDataToSubmit.append("location", formData.location);
-    formDataToSubmit.append("city", formData.city);
-    formDataToSubmit.append("starRating", formData.starRating);
-    images.forEach((image, index) => formDataToSubmit.append(`images`, image)); // Append each image file
-
     try {
-      const response = await fetch("/api/backend/hotels", {
+      const base64Logo = formData.logo ? await fileToBase64(formData.logo) : null; // Convert logo to base64
+      const base64Images = await Promise.all(images.map((file) => fileToBase64(file))); // Convert images to base64
+
+      const payload = {
+        name: formData.name,
+        logo: base64Logo, // Base64 string
+        address: formData.address,
+        location: formData.location,
+        city: formData.city,
+        starRating: formData.starRating,
+        images: base64Images, // Array of base64 strings
+      };
+
+      const response = await fetch("/api/hotels", {
         method: "POST",
-        body: formDataToSubmit, // Directly pass FormData
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
       const data = await response.json();
       if (data.error) {
         setError(data.error);
