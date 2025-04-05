@@ -7,19 +7,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { parseAndVerifyToken } from "@/utils/jwt";
-
-const isValidDate = (date) => {
-  if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) return false;
-
-  const [year, month, day] = date.split("-").map(Number);
-  const parsedDate = new Date(year, month - 1, day);
-
-  return (
-    parsedDate.getFullYear() === year &&
-    parsedDate.getMonth() + 1 === month &&
-    parsedDate.getDate() === day
-  );
-};
+import { isValidDate } from "@/utils/validations";
+import { findAvailableIndex } from "@utils/availablehelp";
 
 async function bookAFSFlight(
   firstName,
@@ -56,6 +45,8 @@ async function bookAFSFlight(
 export async function POST(request) {
   let hotelBooking = null;
   let flightBooking = null;
+  let flightBookingId = null;
+  let hotelBookingId = null;
   let totalBookingPrice = 0;
   try {
     const body = await request.json();
@@ -150,7 +141,7 @@ export async function POST(request) {
           data: {
             bookingId: newBooking.id,
             reference: flightAFSBookRes.bookingReference,
-            status: flightAFSBookRes.status,
+            status: "PENDING", //flightAFSBookRes.status,
             price: totalFlightPrice,
             flightId: AFSflightId,
           },
@@ -166,17 +157,18 @@ export async function POST(request) {
         console.log("Prisma error: ", err);
       }
       console.log("FLIGHT BOOKING: ", flightBooking);
-      if (!roomTypeId) {
-        newBooking = await prisma.booking.update({
-          where: { id: newBooking.id },
-          data: { status: "CONFIRMED" },
-        });
-      }
+      flightBookingId = flightBooking.id;
+      // if (!roomTypeId) {
+      //   newBooking = await prisma.booking.update({
+      //     where: { id: newBooking.id },
+      //     data: { status: "PENDING" },
+      //   });
+      // }
       const notifyRes = await fetch(notificationsUrl.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `Your flight booking ref (#${flightBooking.reference}) has been confirmed.`,
+          message: `Your flight booking ref (#${flightBooking.reference}) has been Requested.`,
           uid: newBooking.userId,
         }),
       });
@@ -201,12 +193,27 @@ export async function POST(request) {
           { status: 400 }
         );
       }
-      if (!roomType.availableRooms) {
+
+      if (!roomType.schedule || !roomType.totalRooms) {
         return NextResponse.json(
           { error: "No rooms available" },
           { status: 400 }
         );
       }
+      // FIND AVAILABILITY
+
+      const availableIndex = findAvailableIndex(
+        roomType.schedule,
+        checkIn,
+        checkOut
+      );
+      if (availableIndex === -1) {
+        return NextResponse.json(
+          { error: "No rooms available" },
+          { status: 400 }
+        );
+      }
+
       const hotel = await prisma.hotel.findUnique({
         where: { id: hotelId },
       });
@@ -223,6 +230,9 @@ export async function POST(request) {
 
       hotelBooking = await prisma.hotelBooking.create({
         data: {
+          customerFirstName: user.firstName,
+          customerLastName: user.lastName,
+          customerEmail: user.email,
           checkIn: new Date(checkIn),
           checkOut: new Date(checkOut),
           status: "PENDING",
@@ -230,8 +240,16 @@ export async function POST(request) {
           hotelId: hotelId,
           bookingId: newBooking.id,
           roomTypeId: roomTypeId,
+          roomIndexNumber: availableIndex,
         },
       });
+      if (!hotelBooking) {
+        return NextResponse.json(
+          { error: "Hotel booking failed" },
+          { status: 500 }
+        );
+      }
+      hotelBookingId = hotelBooking.id;
       let ownerId = hotel.ownerId;
       totalBookingPrice += parseInt(totalHotelPrice, 10);
       if (ownerId) {
@@ -263,7 +281,13 @@ export async function POST(request) {
     }
     newBooking = await prisma.booking.update({
       where: { id: newBooking.id },
-      data: { totalPrice: totalBookingPrice },
+      data: {
+        totalPrice: totalBookingPrice,
+        flightBookingId: flightBookingId,
+        hotelBookingId: hotelBookingId,
+        flightBookings: flightBooking,
+        hotelBookings: hotelBooking,
+      },
     });
 
     return NextResponse.json({
@@ -271,6 +295,8 @@ export async function POST(request) {
       booking: newBooking,
       hotelBooking: hotelBooking,
       flightBooking: flightBooking,
+      flightBookingId: flightBookingId,
+      hotelBookingId: hotelBookingId,
     });
   } catch (err) {
     console.error(err);

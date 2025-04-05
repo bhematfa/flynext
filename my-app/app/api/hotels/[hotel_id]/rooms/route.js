@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 // import { parseAndVerifyToken } from "../../../../../utils/jwt.js";
 
+
+// add room type
 export async function POST(request, { params }) {
   try {
     const { hotel_id } = await params; // Hotel ID from the URL
@@ -72,8 +74,6 @@ export async function POST(request, { params }) {
       schedule.push(roomSched);
     }
 
-    console.log(hotel_id);
-
     // Create room type in the database
     const room = await prisma.roomType.create({
       data: {
@@ -96,6 +96,7 @@ export async function POST(request, { params }) {
   }
 }
 
+// get room types
 export async function GET(request, { params }) {
     try {
         const { hotel_id } = await params;

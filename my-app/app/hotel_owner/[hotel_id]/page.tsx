@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { RoomType } from "@prisma/client";
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 const ManageRoomTypes = ({ params }: { params: Promise<{ hotel_id: string }> }) => {
 
@@ -16,7 +16,8 @@ const ManageRoomTypes = ({ params }: { params: Promise<{ hotel_id: string }> }) 
   const [images, setImages] = useState<File[]>([]); // Store uploaded image files
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [availableRooms, setAvailableRooms] = useState<{ [key: string]: number }>({}); // Track available rooms
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("flynextToken") : null;
 
   useEffect(() => {
     const fetchRoomTypes = async () => {
@@ -45,36 +46,6 @@ const ManageRoomTypes = ({ params }: { params: Promise<{ hotel_id: string }> }) 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleAvailableRoomsChange = (roomId: string, value: string) => {
-    setAvailableRooms((prevState) => ({
-      ...prevState,
-      [roomId]: parseInt(value, 10),
-    }));
-  };
-
-  const handleUpdateAvailableRooms = async (roomId: string) => {
-    try {
-      const response = await fetch(`/api/hotels/rooms/${roomId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ availableRooms: availableRooms[roomId] }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        alert(`Error: ${data.error}`);
-      } else {
-        alert("Room availability updated successfully!");
-        const updatedRoomTypes = roomTypes.map((room) =>
-          room.id === roomId ? { ...room, availableRooms: availableRooms[roomId] } : room
-        );
-        setRoomTypes(updatedRoomTypes);
-      }
-    } catch (error) {
-      console.error("Error updating room availability:", error);
-      alert("An error occurred while updating room availability.");
-    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,13 +107,32 @@ const ManageRoomTypes = ({ params }: { params: Promise<{ hotel_id: string }> }) 
 
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gray-900 text-white">
+      <Link
+        href={`/hotel_visitor/${hotelId}`}
+        className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded mb-4 mt-4"
+      >
+        <button type="submit" className="w-full bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded">
+            View Hotel and All Room Type Details
+          </button>
+      </Link>
+
+      <Link
+        href={`/hotel_owner/${hotelId}/bookings`}
+        className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded mb-4 mt-4"
+      >
+        <button type="submit" className="w-full bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded">
+            View Bookings
+          </button>
+      </Link>
+
+
       <h1 className="text-3xl font-bold mb-6 text-center">Manage Room Types</h1>
       {error && <p className="text-red-500">{error}</p>}
       {successMessage && <p className="text-green-500">{successMessage}</p>}
 
       {/* Form Section */}
       <form onSubmit={handleCreateRoom} className="bg-gray-800 p-6 -lg space-y-6 w-full max-w-md">
-        <label htmlFor="name" className="block text-white">Room Name {hotelId}</label>
+        <label htmlFor="name" className="block text-white">Room Name </label>
         <input
           id="name"
           type="text"
@@ -208,63 +198,19 @@ const ManageRoomTypes = ({ params }: { params: Promise<{ hotel_id: string }> }) 
       {/* Room List Section */}
       <div className="overflow-y-auto max-h-64 bg-gray-800 p-4 space-y-4 w-full max-w-md">
         {roomTypes.map((room) => (
-          <div key={room.id} className="bg-gray-700 p-4 rounded space-y-2">
-            <h2 className="text-lg font-bold text-white">{room.name}</h2>
-            <p className="text-white"><strong>Amenities:</strong> {Array.isArray(room.amenities) ? room.amenities.join(", ") : "No amenities listed"}</p>
-            <p className="text-white"><strong>Price Per Night:</strong> ${room.pricePerNight.toString()}</p>
-            <p className="text-white"><strong>Total Rooms:</strong> {room.totalRooms}</p>
+          <Link
+            key={room.id}
+            href={`/hotel_owner/${hotelId}/${room.id}`}
+            className="border rounded p-4 flex items-center space-x-4 hover:bg-gray-700"
+          >
+            <div key={room.id} className="bg-gray-700 p-4 rounded space-y-2">
+              <h2 className="text-lg font-bold text-white">{room.name}</h2>
+              <p className="text-white"><strong>Amenities:</strong> {Array.isArray(room.amenities) ? room.amenities.join(", ") : "No amenities listed"}</p>
+              <p className="text-white"><strong>Price Per Night:</strong> ${room.pricePerNight.toString()}</p>
+              <p className="text-white"><strong>Total Rooms:</strong> {room.totalRooms}</p>
 
-            {/* Update Available Rooms Section */}
-            <div>
-              <label className="block text-white" htmlFor={`available-rooms-${room.id}`}>
-                Update Available Rooms:
-              </label>
-              <input
-                id={`available-rooms-${room.id}`}
-                type="number"
-                value={availableRooms[room.id] || ""}
-                onChange={(e) => handleAvailableRoomsChange(room.id, e.target.value)}
-                className="w-full p-2 rounded bg-gray-700 text-white"
-                placeholder="Enter number"
-              />
-              <button
-                onClick={() => handleUpdateAvailableRooms(room.id)}
-                className="mt-2 w-full bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded"
-              >
-                Update
-              </button>
             </div>
-
-            {/* Slideshow Section */}
-            <div className="relative w-full h-48 bg-gray-600 rounded overflow-hidden">
-              {room.images.length > 0 ? (
-                room.images.map((image, index) => (
-                  <img
-                    key={index}
-                    src={`/${image}`} // Assuming images are served from "my-app/uploads"
-                    alt={`Room image ${index + 1}`}
-                    className={`w-full h-full object-cover ${index === 0 ? "block" : "hidden"}`} // Add logic to show only the current slide
-                  />
-                ))
-              ) : (
-                <p className="text-white">No images available.</p>
-              )}
-              <div className="absolute inset-0 flex justify-between items-center px-2">
-                <button
-                  className="bg-black bg-opacity-50 text-white p-2 rounded"
-                // Implement logic to navigate to the previous slide
-                >
-                  ◀
-                </button>
-                <button
-                  className="bg-black bg-opacity-50 text-white p-2 rounded"
-                // Implement logic to navigate to the next slide
-                >
-                  ▶
-                </button>
-              </div>
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

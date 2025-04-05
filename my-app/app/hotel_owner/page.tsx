@@ -1,5 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import router from "next/router";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 
 // create hotel
 
@@ -16,6 +18,36 @@ const CreateHotel = () => {
   const [images, setImages] = useState<File[]>([]); // Store uploaded image files
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
+  const [hotelList, setHotelList] = useState<{ id: string; name: string; city: string; address: string; logo?: string }[]>([]); // List of hotels owned by the user
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("flynextToken") : null;
+
+  // Fetch hotels owned by the user
+  useEffect(() => {
+    const fetchHotelList = async () => {
+      try {
+        const response = await fetch("/api/hotels/list", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        console.log("Hotel list data:", data); // Debugging line
+        if (data.error) {
+          setError(data.error);
+        } else {
+          setHotelList(data || []);
+        }
+        console.log("Hotel list:", hotelList); // Debugging line
+      } catch (err) {
+        console.error("Error fetching hotel list:", err);
+        setError("Failed to fetch hotel list.");
+      }
+    };
+
+    fetchHotelList();
+  }, [token]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,7 +89,7 @@ const CreateHotel = () => {
 
       const response = await fetch("/api/hotels", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
 
@@ -75,6 +107,8 @@ const CreateHotel = () => {
           starRating: "",
         });
         setImages([]); // Clear image attachments
+        // Refresh the hotel list after adding a new hotel
+        setHotelList((prevHotels) => [...prevHotels, data.hotel]);
       }
     } catch (err) {
       console.error("Error creating hotel:", err);
@@ -172,6 +206,44 @@ const CreateHotel = () => {
           Add Hotel
         </button>
       </form>
+
+      {/* Display list of hotels owned by the user */}
+      <div className="bg-gray-800 p-6 rounded-lg space-y-4 mt-6 w-full max-w-md">
+        <h2 className="text-2xl font-bold">Your Hotels</h2>
+        {hotelList.length > 0 ? (
+          hotelList.map((hotel) => (
+            <Link
+              key={hotel.id}
+              href={`/hotel_owner/${hotel.id}`}
+              className="border rounded p-4 flex items-center space-x-4 hover:bg-gray-700"
+            >
+              {/* Hotel Logo */}
+              {hotel.logo ? (
+                <img
+                  src={hotel.logo}
+                  alt={`${hotel.name} logo`}
+                  className="w-12 h-12 object-cover rounded-full"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-gray-600 flex items-center justify-center rounded-full">
+                  <span className="text-sm text-white">No Logo</span>
+                </div>
+              )}
+
+              {/* Hotel Details */}
+              <div>
+                <h3 className="text-lg font-bold">{hotel.name}</h3>
+                <p className="text-sm">{hotel.city}</p>
+                <p className="text-sm">{hotel.address}</p>
+              </div>
+            </Link>
+          ))
+        ) : (
+          <p>No hotels found. Add your first hotel above!</p>
+        )}
+      </div>
+
+
     </div>
   );
 };

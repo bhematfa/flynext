@@ -8,7 +8,8 @@ import { findAvailability } from "../../../../../utils/availablehelp.js";
 export async function GET(request, { params }) {
 
     try {
-        const { id } = await params;
+        const { hotel_id } = await params;
+        const id = hotel_id;
         const { searchParams } = new URL(request.url);
         const date = searchParams.get("date");
         const roomTypeName = searchParams.get("roomType");
@@ -92,6 +93,7 @@ export async function GET(request, { params }) {
         )
     }
     catch(error) {
+        console.log(error.stack);
         return NextResponse.json(
             {error : "Internal server error"},
             {status: 500}
@@ -100,12 +102,12 @@ export async function GET(request, { params }) {
 }
 
 // As a hotel owner, I want to cancel a hotel reservation.
-export async function PUT(request, { params }) {
+export async function PATCH(request, { params }) {
     try {
 
         const { bookingId } = await request.json();
 
-        const { id } = await params;
+        const { hotel_id } = await params;
         
         const userDec = await parseAndVerifyToken(request);
 
@@ -132,7 +134,7 @@ export async function PUT(request, { params }) {
         
         const hotel = await prisma.hotel.findUnique({
             where: {
-              id: id,
+              id: hotel_id,
             }
           });
 

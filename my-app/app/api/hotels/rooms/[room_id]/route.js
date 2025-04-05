@@ -22,8 +22,7 @@ export async function PATCH(request, { params }) {
         const { origin } = new URL(request.url);
         const notificationsUrl = new URL("/api/notifications", origin);
 
-
-        /*
+        
         if (userDec.err) {
             return NextResponse.json (
                 {error : "Unauthorized"},
@@ -42,7 +41,7 @@ export async function PATCH(request, { params }) {
                 {status: 401}
             );
         }
-        */
+        
 
         if (!availableRooms) {
             return NextResponse.json(
@@ -70,7 +69,6 @@ export async function PATCH(request, { params }) {
             );
         }
 
-        /*
 
         if (hotel.ownerId !== user.id) {
             return NextResponse.json(
@@ -78,7 +76,7 @@ export async function PATCH(request, { params }) {
                 {status: 403}
             );
         }
-            */
+            
 
         if (availableRooms > room.totalRooms) {
             return NextResponse.json(
@@ -159,11 +157,12 @@ export async function GET(request, { params }) {
 
     try {
         const {room_id} = await params;
+        const { searchParams } = new URL(request.url);
 
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
 
-        const room = await prisma.room.findUnique({
+        const room = await prisma.roomType.findUnique({
             where: {
                 id: room_id,
             },
@@ -171,13 +170,15 @@ export async function GET(request, { params }) {
 
         const availRooms = findAvailability(room.schedule, startDate, endDate);
 
+        console.log(availRooms);
+
         return NextResponse.json(
-            {message: "There are ${availRooms} available rooms."},
-            {room}
+            (availRooms)
         );
     }
 
     catch (error)   {
+        console.log(error);
         return NextResponse.json(
             {error : "Internal server error"},
             {status: 500}

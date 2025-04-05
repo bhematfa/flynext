@@ -2,17 +2,15 @@ import fs from "fs";
 import path from "path";
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-//import { parseAndVerifyToken } from "../../../../utils/jwt.js";
+import { parseAndVerifyToken } from "@/utils/jwt.js";
+import { findAvailability } from "../../../utils/availablehelp.js";
 
+//create hotel
 export async function POST(request) {
     try {
-        // Parse JSON body
-        const { name, logo, address, location, city, starRating, images } = await request.json();
-        
-        // Verify token and get user
 
-        /*
-        
+        const { name, logo, address, location, city, starRating, images } = await request.json();
+
         const userDec = await parseAndVerifyToken(request);
 
         if (userDec.err) {
@@ -21,20 +19,19 @@ export async function POST(request) {
                 { status: 401 }
             );
         }
-        
+
         const user = await prisma.user.findUnique({
             where: { id: userDec.userId },
         });
 
-        
+
         if (!user) {
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
             );
         }
-        */
-        // Validate required fields
+
         if (!name || !logo || !address || !location || !city || !starRating) {
             return NextResponse.json(
                 { error: "Invalid Field" },
@@ -44,28 +41,28 @@ export async function POST(request) {
 
         // Decode Base64 and save files locally
         const saveBase64File = (base64String, fileName) => {
-            const uploadDir = path.join(process.cwd(), "uploads");
-        
+            const uploadDir = path.join(process.cwd(), "public/uploads"); // Save files in 'public/uploads'
+
             // Ensure the uploads directory exists
             if (!fs.existsSync(uploadDir)) {
                 fs.mkdirSync(uploadDir, { recursive: true });
             }
-        
-            const filePath = path.join(uploadDir, fileName);
+
+            const filePath = path.join(uploadDir, fileName); // Complete path for saving file
             const base64Data = base64String.replace(/^data:image\/\w+;base64,/, ""); // Remove prefix
             const buffer = Buffer.from(base64Data, "base64");
             fs.writeFileSync(filePath, buffer); // Save file locally
-        
+
             // Return only the relative path (e.g., 'uploads/logo-<timestamp>.png')
-            return path.join("uploads", fileName);
+            return path.join("uploads", fileName); // Reference as 'public/uploads'
         };
+
 
         const logoPath = saveBase64File(logo, `logo-${Date.now()}.png`); // Save logo file
         const imagePaths = images.map((image, index) =>
             saveBase64File(image, `image-${Date.now()}-${index}.png`)
         ); // Save all image files
 
-        // Create hotel entry in Prisma
         const hotel = await prisma.hotel.create({
             data: {
                 name,
@@ -77,7 +74,7 @@ export async function POST(request) {
                 images: imagePaths,
                 owner: {
                     connect: {
-                        id: "648bc1cd-a6ae-4b77-9d50-9fd0e888237c",
+                        id: userDec.userId,
                     },
                 },
             },
@@ -107,7 +104,7 @@ export async function GET(request) {
         const name = searchParams.get("name");
         const starRating = parseInt(searchParams.get("starRating"), 10);
         const priceRange = searchParams.get("priceRange")?.split("-");
-    
+
         const startDate = new Date(checkIn);
         const endDate = new Date(checkOut);
 
@@ -119,38 +116,37 @@ export async function GET(request) {
         }
 
         const whereClause = {
-        ...(city && { city }),
-        ...(name && { name }),
-        ...(starRating && { starRating }),
+            ...(city && { city }),
+            ...(name && { name }),
+            ...(starRating && { starRating }),
         };
 
-        // Query made with Co Pilot
+        // Query initial hotel and roomType data
         const result = await prisma.hotel.findMany({
             where: whereClause,
             include: {
-                roomTypes: {
-                where: {
-                    AND: [
-                    {
-                        pricePerNight: {
-                        gte: priceRange ? parseFloat(priceRange[0]) : undefined,
-                        lte: priceRange ? parseFloat(priceRange[1]) : undefined,
-
-                        },
-                    },
-                    ],
-                },
-                },
+                roomTypes: true,
             },
         });
 
-        const availableHotels = result.filter((hotel) => hotel.roomTypes.length > 0);
+        // Filter hotels by room availability and price
+        const availableHotels = result.filter((hotel) => {
+            // Check if the hotel has any room types that match the criteria
+            const hasAvailableRoom = hotel.roomTypes.some((roomType) => {
+                const isAvailable = findAvailability(roomType.schedule, checkIn, checkOut) > 0;
+                const isInPriceRange =
+                    roomType.pricePerNight >= parseFloat(priceRange[0]) &&
+                    roomType.pricePerNight <= parseFloat(priceRange[1]);
+                return isAvailable && isInPriceRange;
+            });
 
-        return NextResponse.json({ 
-            availableHotels
+            return hasAvailableRoom;
         });
-        
+
+        return NextResponse.json({ availableHotels });
+
     } catch (error) {
+        console.error("Error:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

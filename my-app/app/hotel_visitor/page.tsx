@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Hotel, RoomType } from "@prisma/client";
-import { findAvailability } from "../../../utils/availablehelp.js";
 
 // View list of hotels
 
@@ -27,7 +26,7 @@ const HotelSearch = () => {
     setSearchParams({ ...searchParams, [e.target.name]: e.target.value });
   };
 
-  // Function to filter hotels based on availability
+  // Fetch hotels without filtering by room availability
   const fetchHotels = async () => {
     setLoading(true);
     setError("");
@@ -38,17 +37,8 @@ const HotelSearch = () => {
       if (data.error) {
         setError(data.error);
       } else {
-
-        // Filter hotels by room availability
-        const filteredHotels = await Promise.all(
-          data.availableHotels.map(async (hotel: HotelWithRooms) => {
-            const isAvailable = await checkRoomAvailability(hotel.roomTypes);
-            return isAvailable ? hotel : null;
-          })
-        );
-
-        // Only include hotels with available rooms
-        setHotels(filteredHotels.filter((hotel) => hotel !== null));
+        // Simply set all hotels returned by the backend
+        setHotels(data.availableHotels);
       }
     } catch (err) {
       console.error("Error fetching hotels:", err);
@@ -56,17 +46,6 @@ const HotelSearch = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Check if any room in a hotel is available for the date range
-  const checkRoomAvailability = async (roomTypes: RoomType[]) => {
-    for (const roomType of roomTypes) {
-      const availRooms = findAvailability(roomType.schedule, searchParams.checkIn, searchParams.checkOut);
-      if (availRooms > 0) {
-        return true; // Room type is available
-      }
-    }
-    return false; // No room types are available
   };
 
   return (
@@ -129,25 +108,28 @@ const HotelSearch = () => {
 
         {/* Hotel Results */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {hotels.length > 0 ? (
-            hotels.map((hotel, index) => (
-              <Link key={index} href={`/hotel_visitor/${hotel.id}`}>
-                <div className="bg-gray-800 p-6 rounded-lg shadow hover:bg-gray-700 transition duration-200">
-                  <h3 className="text-xl font-bold">{hotel.name}</h3>
-                  <p>City: {hotel.city}</p>
-                  <p>Starting Price: $
-                    {hotel.roomTypes.length > 0
-                      ? hotel.roomTypes.reduce((min, roomType) => Math.min(min, roomType.pricePerNight.toNumber()), Infinity)
-                      : "Not Available"}
-                  </p>
-                  <p>Star Rating: {hotel.starRating}</p>
-                  <p className="text-sm italic text-gray-400">Location: Map Pinpoint</p>
-                </div>
+          {hotels.map((hotel, index) => (
+            <div key={index} className="bg-gray-800 p-6 rounded-lg shadow">
+              <h3 className="text-xl font-bold">{hotel.name}</h3>
+              <p>City: {hotel.city}</p>
+              <p>Star Rating: {hotel.starRating}</p>
+              <p>
+                Starting Price: $
+                {hotel.roomTypes.length > 0
+                  ? typeof hotel.roomTypes[0].pricePerNight === "number"
+                    ? hotel.roomTypes[0].pricePerNight
+                    : parseFloat(hotel.roomTypes[0].pricePerNight.toString())
+                  : "Not Available"}
+              </p>
+              <p className="text-sm italic text-gray-400">Location: Map Pinpoint</p>
+              {/* Button to navigate to hotel_visitor/[hotel_id] */}
+              <Link href={`/hotel_visitor/${hotel.id}`}>
+                <button className="mt-4 bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded">
+                  View Hotel Details
+                </button>
               </Link>
-            ))
-          ) : (
-            <p className="text-gray-400">No hotels found with available rooms in the selected range.</p>
-          )}
+            </div>
+          ))}
         </div>
       </main>
     </div>

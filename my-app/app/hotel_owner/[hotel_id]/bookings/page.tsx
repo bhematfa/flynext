@@ -7,12 +7,20 @@ import Link from 'next/link';
 // view list of bookings
 // cancel bookings
 
-const BookingList = ({ hotelId }: { hotelId: string }) => {
+const BookingList = ({
+  params,
+}: {
+  params: Promise<{ hotel_id: string; }>;
+}) => {
   const [bookings, setBookings] = useState([]);
   const [date, setDate] = useState("");
   const [roomType, setRoomType] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("flynextToken") : null;
+
+  const { hotel_id } = React.use(params) || {};
 
   // Fetch bookings from the API with filters
   const fetchBookings = async () => {
@@ -21,7 +29,12 @@ const BookingList = ({ hotelId }: { hotelId: string }) => {
       if (date) queryParams.append("date", date);
       if (roomType) queryParams.append("roomType", roomType);
 
-      const response = await fetch(`/api/hotels/${hotelId}/bookings?${queryParams}`);
+      const response = await fetch(`/api/hotels/${hotel_id}/bookings?${queryParams}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`},
+        }
+      );
       const data = await response.json();
 
       if (data.error) {
@@ -38,9 +51,9 @@ const BookingList = ({ hotelId }: { hotelId: string }) => {
   // Cancel a booking
   const cancelBooking = async (bookingId: string) => {
     try {
-      const response = await fetch(`/api/hotels/${hotelId}/bookings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(`/api/hotels/${hotel_id}/bookings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ bookingId }),
       });
 
