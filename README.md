@@ -1,93 +1,225 @@
-# flynext
+# FlyNext
 
 
 
-## Getting started
+FlyNext is a comprehensive travel booking platform designed to provide users with a seamless experience in searching for flights and hotels, managing bookings, and handling notifications. Built with Next.js, Prisma, and TypeScript, FlyNext ensures a robust and type-safe development environment.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
 
-## Add your files
+# Features
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+
+
+## Accounts
+
+
+
+-	User Registration and Authentication: Users can sign up, log in, log out, and edit their profiles, including first and last name, email, profile picture, and phone number. Authentication is managed using JWT tokens.
+
+
+
+
+## Flights Search
+
+
+
+*	Flight Lookup: Visitors can search for flights by specifying source, destination, and date(s), supporting both one-way and round-trip options.
+
+
+
+ 
+*	Flight Details: View comprehensive flight information, including departure/arrival times, duration, and layovers.
+
+
+
+ 
+-	Auto-Complete Suggestions: As users type in the source or destination fields, an auto-complete dropdown suggests cities and airports.
+
+
+
+ 
+ 
+-	Date Picker: A user-friendly date picker allows easy selection of travel dates.
+
+
+ 
+
+## Hotel Management
+
+
+
+-	Hotel Addition: Users can add their hotels to the platform, specifying details like name, logo, address, location, star-rating, and images.
+
+-	Room Types Definition: Hotel owners can define room types with names (e.g., twin, double), amenities, prices per night, and images.
+
+-	Booking Management: Hotel owners can view and filter their hotel’s booking list by date and/or room type, cancel reservations, and update room availability.
+
+-	Room Availability: Owners can view room availability for specific date ranges to understand occupancy trends.
+
+
+
+## Hotel Search
+
+-	Hotel Lookup: Visitors can search for hotels by check-in date, check-out date, and city, with filters for name, star-rating, and price range. Results display hotel information, starting price, and a location pinpoint on a map, reflecting only available rooms.
+  
+-	Detailed Hotel Information: View detailed hotel information, including room types, amenities, and pricing.
+
+-	Room Availability: Check the availability and details of different room types for selected dates in a chosen hotel.
+
+## Booking
+
+-	Itinerary Booking: Users can book an itinerary that includes a flight (one-way or round-trip) and/or a hotel reservation.
+
+-	Checkout Process: A checkout page displays all details about the itinerary, collects credit card information, validates card details, and finalizes the booking if everything is correct. Note: Validation involves statically checking the validity of the card number and expiry date; no real charges are made.
+
+-	Suggestions: Users receive hotel suggestions for the city they are flying to and flight suggestions when booking a hotel stay, with links to the main hotel/flight search page with pre-filled inputs, preserving the current order.
+
+-	PDF Invoice: Upon booking, users receive a minimal PDF invoice for their trip, serving as a record of the booking and transaction.
+
+-	Booking Management: Users can view their bookings to access itinerary and booking information and cancel all or specific parts of a booking, providing flexibility in managing trips.
+
+-	Flight Verification: Users can verify their flight booking to ensure the flight schedule remains as planned.
+
+## Notifications
+
+-	User Notifications: Users receive notifications when they book a new itinerary and when there are external changes to their booking (e.g., cancellation by themselves or the hotel owner).
+
+-	Hotel Owner Notifications: Hotel owners receive notifications when a new booking is made for their hotel.
+
+-	Unread Notifications Badge: Users and hotel owners can see the number of unread notifications as a badge, updated as they read them.
+
+## User Experience
+
+-	Intuitive Interface: A clean and intuitive user interface allows visitors to navigate the platform effortlessly.
+
+-	Responsive Design: The website renders well on different screen sizes (monitors, laptops, tablets, and mobile devices), ensuring accessibility and usability across devices.
+
+-	Dark/Light Mode Toggle: Visitors can toggle between dark and light modes for a comfortable viewing experience.
+
+
+## Technologies
+
+-	Next.js: For server-side rendering and routing.
+
+-	Prisma: For database ORM.
+
+-	TypeScript: For type safety.
+
+- React: For dynamic web pages
+
+-	Tailwind CSS: For styling.
+
+-	JWT: For authentication.
+
+- Puppeteer: For PDF generation.
+
+- OSM: For Hotel pinpoint on a Map.
+
+- Docker: For Containerization.
+
+
+## Project Structure
 
 ```
-cd existing_repo
-git remote add origin https://mcsscm.utm.utoronto.ca/csc309_20251/group_175/PP2.git
-git branch -M main
-git push -uf origin main
+flynext/
+├── my-app/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth/            // Authentication routes
+│   │   │   ├── booking/         // Booking-related routes
+│   │   │   ├── flights/         // Flight search routes
+│   │   │   ├── hotels/          // Hotel search and management routes
+│   │   │   └── notifications/   // Notification routes
+│   │   ├── components/          // Reusable React components
+│   │   ├── {pageName}/page.tsx  // Next.js pages
+│   │   ├── styles/              // Styling files
+│   │   └── utils/               // Utility functions
+│   ├── prisma/
+│   │   └── schema.prisma        // Prisma schema
+│   ├── public/
+│   │   └── images/              // Public images
+│   ├── .env                     // Environment variables
+│   ├── package.json             // Project dependencies
+│   ├── README.md                // Project documentation
+│   └── tsconfig.json            // TypeScript configuration
+└── docker-compose.yaml          // Docker Compose configuration
 ```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://mcsscm.utm.utoronto.ca/csc309_20251/group_175/PP2/-/settings/integrations)
 
-## Collaborate with your team
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+## Setup
 
-## Test and Deploy
+1.	Clone the repository:
 
-Use the built-in continuous integration in GitLab.
+```
+git clone https://github.com/bhematfa/flynext.git
+```
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+2.	Navigate to the project directory:
 
-***
+```
+cd flynext/my-app
+```
 
-# Editing this README
+3.	Install dependencies:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+```
+npm install
+```
 
-## Suggestions for a good README
+4.	Set up the environment variables:
+ 
+Create a .env file in the my-app directory and add the following (replace with your actual values):
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```
+DATABASE_URL=your-database-url
+JWT_SECRET=your-jwt-secret
+AFS_API_KEY=your-afs-api-key
+AFS_BASE_URL=https://advanced-flights-system.replit.app/
+```
 
-## Name
-Choose a self-explaining name for your project.
+5.	Push the Prisma schema and migrate the database:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```
+npx prisma generate
+npx prisma migrate dev --name init
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+6.	Run the development server:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```
+npm run dev
+```
+Your app should now be running at http://localhost:3000
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Visit /login or /register to create or log in to a user account.
+Use the search bars to find flights and hotels.
+Add hotels if you are a hotel owner.
+Book your itinerary and complete checkout with valid (simulated) credit card information.
+View or cancel bookings from the My Bookings page.
+Receive notifications based on your interactions.
+View your cart from the Cart page and proceed to checkout.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Contributions are welcome! If you’re working on a feature or fixing a bug, please:
+1.	Fork the repository.
+2.	Create a new branch (feature/your-feature-name or bugfix/your-bug-fix).
+3.	Commit your changes.
+4.	Push to your fork and submit a pull request.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+This project is licensed under the MIT License.
+
+
+## Acknowledgements
+*	Special thanks to all contributors who helped shape this platform.
+*	Replit AFS API for simulated flight data.
+
+
